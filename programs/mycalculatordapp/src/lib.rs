@@ -1,43 +1,40 @@
 use anchor_lang::prelude::*;
-// The line below wasn't included in the video, but you can include it if you get an error with ProgramResult
-// e.g. "cannot find type `ProgramResult` in this scope"
-use anchor_lang::solana_program::entrypoint::ProgramResult;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 
 #[program]
 pub mod mycalculatordapp {
     use super::*;
-    pub fn create(ctx: Context<Create>, init_message: String) -> ProgramResult {
+    pub fn create(ctx: Context<Create>, init_message: String) -> Result<()> {
         let calculator = &mut ctx.accounts.calculator;
         calculator.greeting = init_message;
         Ok(())
     }
-    pub fn add(ctx: Context<Addition>, num1: i64, num2: i64) -> ProgramResult {
+
+    pub fn add(ctx: Context<Operation>, num1: i64, num2: i64) -> Result<()> {
         let calculator = &mut ctx.accounts.calculator;
         calculator.result = num1 + num2;
         Ok(())
     }
 
-    // IMPLEMENT YOURSELF! Subtraction function
-    pub fn subtract(ctx: Context<Subtraction>, num1: i64, num2: i64) -> ProgramResult {
+    pub fn subtract(ctx: Context<Operation>, num1: i64, num2: i64) -> Result<()> {
         let calculator = &mut ctx.accounts.calculator;
         calculator.result = num1 - num2;
         Ok(())
     }
 
-    // IMPLEMENT YOURSELF! Multiplication function
-    pub fn multiply(ctx: Context<Multiplication>, num1: i64, num2: i64) -> ProgramResult {
+    pub fn multiply(ctx: Context<Operation>, num1: i64, num2: i64) -> Result<()> {
         let calculator = &mut ctx.accounts.calculator;
         calculator.result = num1 * num2;
         Ok(())
     }
 
-    // IMPLEMENT YOURSELF! Division function
-    pub fn divide(ctx: Context<Division>, num1: i64, num2: i64) -> ProgramResult {
+    pub fn divide(ctx: Context<Operation>, num1: i64, num2: i64) -> Result<()> {
         let calculator = &mut ctx.accounts.calculator;
+        require!(num2 != 0, CalculatorError::DivideByZero);
         calculator.result = num1 / num2;
         calculator.remainder = num1 % num2;
+
         Ok(())
     }
 }
@@ -48,39 +45,24 @@ pub struct Create<'info> {
     pub calculator: Account<'info, Calculator>,
     #[account(mut)]
     pub user: Signer<'info>,
-    pub system_program: Program<'info, System>
+    pub system_program: Program<'info, System>,
 }
 
 #[derive(Accounts)]
-pub struct Addition<'info> {
+pub struct Operation<'info> {
     #[account(mut)]
-    pub calculator: Account<'info, Calculator>
-}
-
-// IMPLEMENT YOURSELF! Subtraction context
-#[derive(Accounts)]
-pub struct Subtraction<'info> {
-    #[account(mut)]
-    pub calculator: Account<'info, Calculator>
-}
-
-// IMPLEMENT YOURSELF! Multiplication context
-#[derive(Accounts)]
-pub struct Multiplication<'info> {
-    #[account(mut)]
-    pub calculator: Account<'info, Calculator>
-}
-
-// IMPLEMENT YOURSELF! Division context
-#[derive(Accounts)]
-pub struct Division<'info> {
-    #[account(mut)]
-    pub calculator: Account<'info, Calculator>
+    calculator: Account<'info, Calculator>,
 }
 
 #[account]
 pub struct Calculator {
     pub greeting: String,
     pub result: i64,
-    pub remainder: i64
+    pub remainder: i64,
+}
+
+#[error_code]
+pub enum CalculatorError {
+    #[msg("Cannot divide by zero")]
+    DivideByZero,
 }
